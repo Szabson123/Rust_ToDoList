@@ -1,10 +1,11 @@
-use core::num;
+use core::task;
 use std::io::{self, stdin, Write};
 
 #[derive(Debug)]
 struct Task{
     id: i32,
     name: String,
+    done: bool,
 }
 struct TaskTable{
     tasks: Vec<Task>,
@@ -24,10 +25,11 @@ impl TaskTable {
         loop {
             println!("Podaj zadanie które chcesz wpisać a 'exit' żeby wyjść': ");
             let name = take_the_task();
+            let done = false;
             if name == "exit"{
                 break;
             }
-            self.tasks.push(Task {id: self.counter, name});
+            self.tasks.push(Task {id: self.counter, name, done});
             println!("Zadanie dodano do listy");
             self.counter += 1;
         }
@@ -40,11 +42,79 @@ impl TaskTable {
         }
         else {
             for task in &self.tasks{
-                println!("{}. {}", task.id, task.name)
+                if task.done == false{
+                    let false_v = "Nie zrobione";
+                    println!("{}. {}: {}", task.id, task.name, false_v)
+                }
+                if task.done == true{
+                    let false_v = "Zrobione";
+                    println!("{}. {}: {}", task.id, task.name, false_v)
+                }
+            }
+        }
+    }
+    fn find_task(&mut self, id: i32) -> Option<&mut Task>{
+        self.tasks.iter_mut().find(|task| task.id == id)
+    }
+    
+    fn remove_task(&mut self){
+        self.show_list();
+        println!("WYbierz zadanie które chcesz usunąć");
+        let id = take_choice();
+        match id {
+            Ok(id) => {
+                if let Some(index) = self.tasks.iter().position(|task| task.id == id){
+                    self.tasks.remove(index);
+                    println!("Usunięto zadanie")
+                }
+            }
+            Err(err) => {
+                println!("Błąd: {}", err);
+            }
+        }
+    }
+
+    fn change_task_to_done(&mut self){
+        self.show_list();
+        println!("Wybierz zadanie które ukończyłeś! ");
+        let id = take_choice();
+        match id{
+            Ok(id) => {
+                if let Some(task) = self.find_task(id){
+                    task.done = true;
+                    println!("Zmieniono status zadania! ");
+                }
+                else {
+                    println!("Nie znaleziono zadania")
+                }
+            }
+            Err(err) => {
+                println!("Błąd {}", err)
+            }
+        }    
+    }
+    fn edit_task(&mut self){
+        self.show_list();
+        println!("Wybierz zadanie którego nazwę chcesz zmodyfikować");
+        let id = take_choice();
+        match id {
+            Ok(id) => {
+                if let Some(task) = self.find_task(id){
+                    let new_name = take_the_task();
+                    task.name = new_name;
+                    println!("Zadanie {} zaktualizowane", id)
+                }
+                else {
+                    println!("Nie znaleziono zadania")
+                }
+            }
+            Err(err) => {
+                println!("Błąd {}", err)
             }
         }
     }
 }
+    
 
 fn take_the_task() -> String{
     let mut input = String::new();
@@ -62,7 +132,7 @@ fn take_choice() -> Result<i32, String>{
 fn main(){
     let mut task_table = TaskTable::new();
     loop {
-        println!("Podaj co chcesz zrobić 1-Dodaj zadanie, 2-Pokaż listę, 3-wyjdź");
+        println!("Podaj co chcesz zrobić 1-Dodaj zadanie, 2-Pokaż listę, 3-wyjdź, 4-zmień stan zadania na zrobione, 5-usuń zadanie, 6-edytuj zadanie");
         let choice = match take_choice() {
             Ok(num) =>num,
             Err(_) => {
@@ -77,7 +147,11 @@ fn main(){
                 println!("Zamykanie programu...");
                 break;
             }
+            4 => task_table.change_task_to_done(),
+            5 => task_table.remove_task(),
+            6 => task_table.edit_task(),
             _=> println!("Nie poprawna liczba")
         }
     }
 }
+
